@@ -122,28 +122,14 @@ python scripts/augmentation.py --classes 0 --multiply 4
 
 ## 1. 실시간 데이터 흐름도 (Data Flow Diagram)
 
-[사용자/환경]
-      │
-      ▼
-┌───────────────┐           ┌────────────────────────────────┐
-│  Flutter App  │           │       AI 분석 서버 (FastAPI)     │
-│  (Client)     │           │           (Server)             │
-├───────────────┤           ├────────────────────────────────┤
-│ 1. 영상 캡처   │           │ 3. 데이터 수신 및 디코딩        │
-│    (Camera)   │           │    (OpenCV / NumPy)            │
-│       │       │           │           │                    │
-│       ▼       │           │           ▼                    │
-│ 2. WS 전송    │ ──(Frame)─▶ 4. 병렬 AI 추론                 │
-│    (Binary)   │           │    - YOLOv10 (장애물 탐지)      │
-│               │           │    - Mediapipe (보행 자세 분석)  │
-│               │           │           │                    │
-│               │           │           ▼                    │
-│ 6. 안내 실행   │ ◀─(JSON)── │ 5. 위험도 종합 평가           │
-│    (TTS/UI)   │           │    (Risk Analyzer)             │
-└───────────────┘           └────────────────────────────────┘
-      │
-      ▼
-[음성 안내 및 경고]
+| 단계 | 주체 (Location) | 작업 내용 (Action) | 데이터 형태 |
+| :-- | :--- | :--- | :--- |
+| **Step 1** | **Flutter App** | 카메라 영상 캡처 (5 FPS) | Raw Frame |
+| **Step 2** | **Network** | WebSocket을 통한 실시간 스트리밍 | Binary (JPEG) |
+| **Step 3** | **AI Server** | 데이터 수신 및 이미지 디코딩 | NumPy Array |
+| **Step 4** | **AI Server** | **병렬 AI 추론 실행**<br>1. YOLOv10 (장애물 탐지)<br>2. Mediapipe (자세 분석) | Inference Results |
+| **Step 5** | **AI Server** | 위험도 종합 평가 및 메시지 생성 | JSON Data |
+| **Step 6** | **Flutter App** | 안내 실행 (TTS 음성 및 UI 업데이트) | Voice / UI |
 
 ---
 
