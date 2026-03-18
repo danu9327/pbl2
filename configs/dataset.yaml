@@ -1,0 +1,39 @@
+# SafeWalk Navigation - YOLO Dataset Configuration
+# ============================================
+# 3개 Roboflow 데이터셋 기반
+#
+# Sources:
+#   1. bicycle (Dng)         - 127 images  - CC BY 4.0
+#   2. kickboard (Inha Univ) - 462 images  - CC BY 4.0
+#   3. bollard (project-60htx) - 634 images - CC BY 4.0
+# ============================================
+
+path: ../data/processed
+train: images/train
+val: images/val
+test: images/test
+
+# Unified Detection Classes (3 classes)
+names:
+  0: bicycle       # 자전거 (인도 위 방치/주행)
+  1: kickboard     # 전동킥보드 (방치/주차)
+  2: bollard       # 볼라드 (정상 + 비정상 통합)
+
+nc: 3
+
+# ============================================
+# Source → Unified Class Mapping
+# ============================================
+#
+# [bicycle dataset - Dng]
+#   Bicycle (class 0) → 0 (bicycle)
+#
+# [kickboard dataset - Inha Univ]
+#   kb (class 0) → 1 (kickboard)
+#
+# [bollard dataset - project-60htx]
+#   bollad1 (class 0)                → 2 (bollard)
+#   bollard (class 1)                → 2 (bollard)
+#   bollard_abnormal (class 2)       → 2 (bollard)
+#   bollard_normal (class 3)         → 2 (bollard)
+#   tubular marker_normal (class 4)  → 2 (bollard)

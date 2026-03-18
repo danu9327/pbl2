@@ -1,0 +1,18 @@
+.vscode
+
+# models
+*.ckpt
+*.pt
+*.pth
+*.pkl
+*.h5
+*.onnx
+
+# Ignore binary files
+*.pyc
+*.ipynb
+*.sh
+
+# dataset files are too big
+data/
+models/
