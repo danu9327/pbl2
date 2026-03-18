@@ -119,3 +119,51 @@ python scripts/augmentation.py --classes 0 --multiply 4
 ```
 
 ## Flutter & Server 아키텍처
+
+## 1. 시스템 개요 (System Overview)
+
+본 시스템은 **저지연(Low-Latency)** 실시간 분석을 목표로 합니다. 모바일 클라이언트에서 수집된 영상 프레임을 서버로 스트리밍하고, AI 분석 결과를 즉각적인 음성 피드백으로 전환하는 **Request-Response Stream** 구조를 가집니다.
+
+## 2. 아키텍처 다이어그램 (Architecture Diagram)
+
+```mermaid
+graph TD
+    %% 클라이언트 영역
+    subgraph Client ["📱 Flutter Client (App)"]
+        direction TB
+        Cam[📷 Camera Layer] --> Cap[🖼️ Frame Capture]
+        Cap -->|200ms Interval| WS_C[🔌 WebSocket Client]
+        
+        subgraph Logic ["⚙️ Mobile Logic"]
+            WS_C -->|Receive JSON| Sync[🔄 Result Sync]
+            Sync --> TTS[🗣️ TTS Engine]
+            Sync --> UI[🎨 Overlay UI]
+        end
+    end
+
+    %% 네트워크 계층
+    WS_C <==>|Binary Frames / Analysis JSON| Network{🌐 WebSocket}
+
+    %% 서버 영역
+    subgraph Server ["🖥️ AI Server (FastAPI)"]
+        direction TB
+        WS_S[📩 WebSocket Server] --> Decoder[🖼️ OpenCV Decoder]
+        
+        subgraph AI_Engines ["🧠 Parallel Inference"]
+            YOLO[🔍 YOLOv10: Obstacles]
+            Pose[🧘 Mediapipe: Pose/Fall]
+        end
+        
+        Decoder --> YOLO
+        Decoder --> Pose
+        
+        YOLO -->|Objects| Risk[⚖️ Risk Analyzer]
+        Pose -->|Pose Info| Risk
+        
+        Risk -->|RiskResult| WS_S
+    end
+
+    %% 스타일링
+    style Client fill:#e1f5fe,stroke:#01579b
+    style Server fill:#f3e5f5,stroke:#4a148c
+    style AI_Engines fill:#fff3e0,stroke:#e65100,stroke-dasharray: 5 5
