@@ -245,5 +245,3 @@ python scripts/augmentation.py --classes 0 --multiply 4
 ## License
 
 This project uses datasets under CC BY 4.0 license.
-
-```
