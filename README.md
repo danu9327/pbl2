@@ -120,50 +120,71 @@ python scripts/augmentation.py --classes 0 --multiply 4
 
 ## Flutter & Server 아키텍처
 
-## 1. 시스템 개요 (System Overview)
+## 1. 실시간 데이터 흐름도 (Data Flow Diagram)
 
-본 시스템은 **저지연(Low-Latency)** 실시간 분석을 목표로 합니다. 모바일 클라이언트에서 수집된 영상 프레임을 서버로 스트리밍하고, AI 분석 결과를 즉각적인 음성 피드백으로 전환하는 **Request-Response Stream** 구조를 가집니다.
+[사용자/환경]
+      │
+      ▼
+┌───────────────┐           ┌────────────────────────────────┐
+│  Flutter App  │           │       AI 분석 서버 (FastAPI)     │
+│  (Client)     │           │           (Server)             │
+├───────────────┤           ├────────────────────────────────┤
+│ 1. 영상 캡처   │           │ 3. 데이터 수신 및 디코딩        │
+│    (Camera)   │           │    (OpenCV / NumPy)            │
+│       │       │           │           │                    │
+│       ▼       │           │           ▼                    │
+│ 2. WS 전송    │ ──(Frame)─▶ 4. 병렬 AI 추론                 │
+│    (Binary)   │           │    - YOLOv10 (장애물 탐지)      │
+│               │           │    - Mediapipe (보행 자세 분석)  │
+│               │           │           │                    │
+│               │           │           ▼                    │
+│ 6. 안내 실행   │ ◀─(JSON)── │ 5. 위험도 종합 평가           │
+│    (TTS/UI)   │           │    (Risk Analyzer)             │
+└───────────────┘           └────────────────────────────────┘
+      │
+      ▼
+[음성 안내 및 경고]
 
-## 2. 아키텍처 다이어그램 (Architecture Diagram)
+---
 
-```mermaid
-graph TD
-    %% 클라이언트 영역
-    subgraph Client ["📱 Flutter Client (App)"]
-        direction TB
-        Cam[📷 Camera Layer] --> Cap[🖼️ Frame Capture]
-        Cap -->|200ms Interval| WS_C[🔌 WebSocket Client]
-        
-        subgraph Logic ["⚙️ Mobile Logic"]
-            WS_C -->|Receive JSON| Sync[🔄 Result Sync]
-            Sync --> TTS[🗣️ TTS Engine]
-            Sync --> UI[🎨 Overlay UI]
-        end
-    end
+## 2. 모듈별 상세 역할
 
-    %% 네트워크 계층
-    WS_C <==>|Binary Frames / Analysis JSON| Network{🌐 WebSocket}
+### 📱 Flutter Client
+* **Camera Module**: 후면 카메라를 통해 초당 5개($5\text{ FPS}$)의 프레임 추출.
+* **WebSocket Service**: 서버와 영구적인 파이프라인 형성, 바이너리(Bytes) 데이터 송신.
+* **TTS Engine**: 서버의 위험 메시지를 음성으로 변환 (위험 단계별 발화 우선순위 관리).
+* **Overlay UI**: 카메라 화면 위에 실시간 위험 수치 및 상태바 렌더링.
 
-    %% 서버 영역
-    subgraph Server ["🖥️ AI Server (FastAPI)"]
-        direction TB
-        WS_S[📩 WebSocket Server] --> Decoder[🖼️ OpenCV Decoder]
-        
-        subgraph AI_Engines ["🧠 Parallel Inference"]
-            YOLO[🔍 YOLOv10: Obstacles]
-            Pose[🧘 Mediapipe: Pose/Fall]
-        end
-        
-        Decoder --> YOLO
-        Decoder --> Pose
-        
-        YOLO -->|Objects| Risk[⚖️ Risk Analyzer]
-        Pose -->|Pose Info| Risk
-        
-        Risk -->|RiskResult| WS_S
-    end
+### 🖥️ AI Analysis Server
+* **FastAPI Wrapper**: 고성능 비동기 I/O를 통한 다중 클라이언트 대응.
+* **YOLOv10 Engine**: $COCO$ 데이터셋 기반 17개 위험 클래스 선별 탐지.
+* **Pose Engine**: 사용자의 3D 랜드마크를 추출하여 상체 기울기($Trunk\ Lean$) 분석.
+* **Risk Analyzer**: 
+    - 객체의 면적 비율($Area\ Ratio$)을 거리로 환산.
+    - 객체 가중치와 자세 점수를 합산하여 최종 위험 점수 산출.
 
-    %% 스타일링
-    style Client fill:#e1f5fe,stroke:#01579b
-    style Server fill:#f3e5f5,stroke:#4a148c
-    style AI_Engines fill:#fff3e0,stroke:#e65100,stroke-dasharray: 5 5
+---
+
+## 3. 분석 알고리즘 (Risk Scoring)
+
+최종 위험 점수($S$)는 다음과 같은 가중 합산 방식을 따릅니다.
+
+$$S = (D \times W) + (P \times 0.3)$$
+
+- $D$ (Distance): 객체가 화면에서 차지하는 면적 비율
+- $W$ (Weight): 객체별 위험 가중치 (예: 대형차=1.0, 벤치=0.5)
+- $P$ (Posture): 보행 불안정 및 낙상 위험 수치
+
+---
+
+## 4. 위험 단계 정의 (Risk Levels)
+
+| 단계 | 위험 점수 | 음성 안내 주기 | 주요 안내 내용 |
+| :--- | :--- | :--- | :--- |
+| **안전 (Safe)** | $0.0 \sim 0.3$ | 5초 | "전방 안전합니다." |
+| **주의 (Caution)** | $0.3 \sim 0.6$ | 3초 | "왼쪽에 차량이 있습니다." |
+| **위험 (Danger)** | $0.6 \sim 0.85$ | 1.5초 | "위험! 정면에 장애물 접근 중." |
+| **긴급 (Critical)** | $0.85 \sim 1.0$ | 즉시 | "즉시 멈추세요! 낙상 위험." |
+
+---
+**Last Updated**: 2026-03-18
