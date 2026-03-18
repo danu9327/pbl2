@@ -83,12 +83,16 @@ safewalk-nav/
 ### Evaluation Results
 
 mAP@0.5:      0.9274
- mAP@0.5:0.95: 0.7064
+ 
+mAP@0.5:0.95: 0.7064
 
- Per-class AP@0.5:
-   bicycle      0.8802
-   kickboard    0.9540
-   bollard      0.9482
+Per-class AP@0.5:
+
+bicycle      0.8802
+
+kickboard    0.9540
+
+bollard      0.9482
 
 
 ## 개별 명령어
