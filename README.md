@@ -1,6 +1,3 @@
----
-
-````markdown
 # 교통약자를 위한 AI 음성 보행 내비게이션
 
 AI-based Voice Navigation System for Mobility Assistance
