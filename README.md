@@ -93,7 +93,7 @@ bicycle      0.8802
 kickboard    0.9540
 
 bollard      0.9482
-
+<img src="./models/safewalk_v1_eval/confusion_matrix_normalized.png" width="500">
 
 ## 개별 명령어
 
