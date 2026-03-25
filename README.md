@@ -142,6 +142,16 @@ safewalk-nav/
   <img src="./assets/confusion_matrix_normalized.png" width="500">
 </p>
 
+### 테스트 결과
+
+<p align="center">
+  <img src="./assets/val_batch0_labels.jpg" width="500">
+</p>
+
+<p align="center">
+  <img src="./assets/val_batch0_pred.jpg" width="500">
+</p>
+
 ---
 
 ## CLI Commands
