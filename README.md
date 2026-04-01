@@ -152,6 +152,30 @@ safewalk-nav/
   <img src="./assets/val_batch0_pred.jpg" width="500">
 </p>
 
+# 주요 기능
+구역 판단: 바운딩박스 하단 중심점 (지면 접점) 기준
+TTS 우선순위: Zone1 경보 발생 시 대기 중인 Zone2/3 메시지를 큐에서 제거하고 즉시 발화
+TTS 백엔드: pyttsx3 → gTTS+pygame → 콘솔 출력 순 자동 선택
+# 실행 방법
+
+# 웹캠 (기본)
+python scripts/detect_roi.py
+
+# 영상 파일
+python scripts/detect_roi.py --source video.mp4
+
+# Zone3 알림 끄기
+python scripts/detect_roi.py --no-zone3
+
+# 화면 없이 실행 (임베디드)
+python scripts/detect_roi.py --no-display
+
+# 의존성 설치
+pip install pyttsx3
+# 또는 (한국어 TTS 품질이 더 좋음, 인터넷 필요)
+pip install gtts pygame
+
+
 ---
 
 ## CLI Commands
