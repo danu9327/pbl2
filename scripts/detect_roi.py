@@ -263,19 +263,26 @@ class TTSEngine:
 # ============================================================
 
 class AlertManager:
+    """
+    구역 진입 시 1회만 경보. 객체가 구역을 벗어났다가 다시 들어와야 재경보.
+    Zone3는 --no-zone3 옵션으로 비활성화 가능.
+    """
+
     def __init__(self, zone3_enabled: bool = True):
         self.zone3_enabled = zone3_enabled
-        self._last_alert: dict[int, float] = {1: 0.0, 2: 0.0, 3: 0.0}
+        self._prev_zones: set[int] = set()   # 직전 프레임의 점유 구역
 
-    def try_alert(self, zone: int) -> bool:
-        """경보를 울릴 수 있으면 True 반환하고 타이머 갱신."""
-        if zone == 3 and not self.zone3_enabled:
-            return False
-        now = time.time()
-        if now - self._last_alert[zone] >= ZONE_COOLDOWN[zone]:
-            self._last_alert[zone] = now
-            return True
-        return False
+    def update(self, current_zones: set[int]) -> list[int]:
+        """
+        current_zones: 이번 프레임에 탐지된 구역 집합
+        반환: 이번에 새로 진입한 구역 목록 (경보 대상)
+        """
+        if not self.zone3_enabled:
+            current_zones = current_zones - {3}
+
+        newly_entered = sorted(current_zones - self._prev_zones)  # 이전엔 없었던 구역
+        self._prev_zones = current_zones
+        return newly_entered
 
     @staticmethod
     def build_message(zone: int, class_id: int) -> str:
@@ -405,13 +412,13 @@ def run(source: str, conf_thresh: float, zone3_enabled: bool, display: bool):
                     if zone not in zone_best or conf > zone_best[zone][1]:
                         zone_best[zone] = (class_id, conf, (x1, y1, x2, y2))
 
-            # ── 경보 발생 (Zone1 → Zone2 → Zone3 우선순위) ─────────────
-            for zone_id in sorted(zone_best.keys()):
-                class_id, conf, _ = zone_best[zone_id]
-                if alert.try_alert(zone_id):
-                    msg = alert.build_message(zone_id, class_id)
-                    tts.speak(msg, priority=zone_id)
-                    print(f"[ALERT Zone{zone_id}] {msg}")
+            # ── 경보 발생: 새로 진입한 구역만 1회 ────────────────────────
+            newly_entered = alert.update(set(zone_best.keys()))
+            for zone_id in newly_entered:
+                class_id, _, _ = zone_best[zone_id]
+                msg = alert.build_message(zone_id, class_id)
+                tts.speak(msg, priority=zone_id)
+                print(f"[ALERT Zone{zone_id}] {msg}")
 
             # ── FPS / HUD ────────────────────────────────────────────
             now  = time.time()
