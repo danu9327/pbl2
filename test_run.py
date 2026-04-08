@@ -36,6 +36,9 @@ def run(source: str, conf: float):
         if not cap.isOpened():
             print("[ERROR] 웹캠을 열 수 없습니다. --source 로 이미지 경로를 지정하세요.")
             sys.exit(1)
+        # 웹캠 초기화 대기 (첫 몇 프레임은 검은 화면)
+        for _ in range(10):
+            cap.read()
         ret, frame = cap.read()
         cap.release()
         if not ret:
@@ -50,6 +53,9 @@ def run(source: str, conf: float):
         print(f"소스: {source}")
 
     # 추론
+    h, w = frame.shape[:2]
+    print(f"이미지 크기: {w}x{h}")
+
     results = model(frame, conf=conf, verbose=False)[0]
     boxes = results.boxes
 
@@ -63,15 +69,33 @@ def run(source: str, conf: float):
         for i, box in enumerate(boxes):
             cls  = int(box.cls[0])
             cf   = float(box.conf[0])
-            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+            raw  = box.xyxy[0].tolist()
+            print(f" [{i+1}] raw xyxy: {raw}")   # 좌표 원본 확인
+
+            # 정규화 좌표(0~1)인지 픽셀 좌표인지 자동 판단
+            if max(raw) <= 1.0:
+                x1 = int(raw[0] * w)
+                y1 = int(raw[1] * h)
+                x2 = int(raw[2] * w)
+                y2 = int(raw[3] * h)
+            else:
+                x1, y1, x2, y2 = map(int, raw)
+
             name = CLASS_NAMES.get(cls, "unknown")
-            print(f" [{i+1}] {name:<10}  conf={cf:.3f}  box=({x1},{y1})-({x2},{y2})")
+            print(f"      {name:<10}  conf={cf:.3f}  box=({x1},{y1})-({x2},{y2})")
 
         # 바운딩박스 시각화
         for box in boxes:
             cls  = int(box.cls[0])
             cf   = float(box.conf[0])
-            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+            raw  = box.xyxy[0].tolist()
+            if max(raw) <= 1.0:
+                x1 = int(raw[0] * w)
+                y1 = int(raw[1] * h)
+                x2 = int(raw[2] * w)
+                y2 = int(raw[3] * h)
+            else:
+                x1, y1, x2, y2 = map(int, raw)
             color = COLORS.get(cls, (200, 200, 200))
             name  = CLASS_NAMES.get(cls, "?")
 
