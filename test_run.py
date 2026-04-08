@@ -17,7 +17,7 @@ except ImportError:
     print("[ERROR] pip install ultralytics")
     sys.exit(1)
 
-MODEL_PATH = Path(__file__).parent / "models" / "safewalk_v1" / "weights" / "best.onnx"
+MODEL_PATH = Path(__file__).parent / "models" / "safewalk_v1" / "weights" / "best.pt"
 CLASS_NAMES = {0: "bicycle", 1: "kickboard", 2: "bollard"}
 COLORS = {0: (0, 200, 255), 1: (0, 255, 100), 2: (255, 100, 0)}
 

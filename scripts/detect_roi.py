@@ -51,7 +51,7 @@ except ImportError:
 # ============================================================
 
 PROJECT_ROOT = Path(__file__).parent.parent
-MODEL_PATH = PROJECT_ROOT / "models" / "safewalk_v1" / "weights" / "best.onnx"
+MODEL_PATH = PROJECT_ROOT / "models" / "safewalk_v1" / "weights" / "best.pt"
 
 CLASS_NAMES    = {0: "bicycle",  1: "kickboard",  2: "bollard"}
 CLASS_NAMES_KO = {0: "자전거",   1: "킥보드",      2: "볼라드"}
