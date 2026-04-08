@@ -343,7 +343,7 @@ def run(source: str, conf_thresh: float, zone3_enabled: bool, display: bool):
         sys.exit(1)
 
     print(f"[INFO] 모델 로드: {MODEL_PATH}")
-    model = YOLO(str(MODEL_PATH))
+    model = YOLO(str(MODEL_PATH), task="detect")
 
     cap_src = 0 if source == "0" else source
     cap = cv2.VideoCapture(cap_src)
