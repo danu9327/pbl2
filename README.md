@@ -274,7 +274,7 @@ python scripts/augmentation.py --classes 0 --multiply 4
 * Parallel AI Inference
 * Mobile–Server Architecture
 * Real-time Voice Feedback
-
+![이미지사진](assets/image.png)
 ---
 
 ## Future Work
